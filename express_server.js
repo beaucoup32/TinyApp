@@ -10,6 +10,13 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+
+const generateRandUrl = () => {
+  
+}
+// middleware (middle man) -> sets encoding
+app.use(express.urlencoded({ extended: true }));
+
 //use res.render to load up ejs view file
 app.get("/", (req, res) => {
   templateVars = {
@@ -27,14 +34,13 @@ app.get("/urls", (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-app.get("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  const templateVars = { 
-    id: id,
-     longURL: urlDatabase[id] 
-    };
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+});
 
-  res.render("urls_show", templateVars);
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
 });
 
 app.get("/about", (req, res) => {
@@ -49,8 +55,18 @@ app.get('/dripDrop', (req, res) => {
   templateVars = {
     main: 'Drip Drop'
   }
-
+  
   res.render('dripDrop', templateVars);
+});
+
+app.get("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const templateVars = { 
+    id: id,
+     longURL: urlDatabase[id] 
+    };
+
+  res.render("urls_show", templateVars);
 });
 
 app.get('*', (req, res) => {
