@@ -5,15 +5,18 @@ const PORT = 8080; // default port 8080
 // set view engine to ejs
 app.set('view engine', 'ejs');
 
-const urlDatabase = {
+let urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
 
 const generateRandUrl = () => {
-  
+  const randUrl = Math.random().toString(36).slice(2, 8);
+  return randUrl;
 }
+
+// console.log(generateRandUrl());
 // middleware (middle man) -> sets encoding
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,11 +39,21 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  let id = generateRandUrl();
+  urlDatabase[id] = req.body.longURL;
+  
+  console.log(urlDatabase);
+  return res.redirect(`/urls/${id}`);
 });
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+});
+
+app.get("/u/:id", (req, res) => {
+  const id = req.params.id
+  const longURL = urlDatabase[id];
+  res.redirect(longURL);
 });
 
 app.get("/about", (req, res) => {
