@@ -21,6 +21,8 @@ const generateRandUrl = () => {
 app.use(express.urlencoded({ extended: true }));
 
 //use res.render to load up ejs view file
+
+// ROOT PAGE //
 app.get("/", (req, res) => {
   templateVars = {
     main: 'Drip Drop'
@@ -45,6 +47,14 @@ app.post("/urls", (req, res) => {
   console.log(urlDatabase);
   return res.redirect(`/urls/${id}`);
 });
+
+// DELETE URLS //
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id
+  console.log(`Deleting shortURL: ${id} ==> ${urlDatabase[id]}`);
+  delete urlDatabase[id];
+  return res.redirect('/urls');
+})
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
