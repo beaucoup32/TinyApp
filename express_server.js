@@ -1,4 +1,5 @@
 const express = require("express");
+const { url } = require("inspector");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -39,6 +40,7 @@ app.get("/urls", (req, res) => {
   res.render('urls_index', templateVars);
 });
 
+//  CREATE NEW SHORT URL //
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   let id = generateRandUrl();
@@ -54,6 +56,19 @@ app.post('/urls/:id/delete', (req, res) => {
   console.log(`Deleting shortURL: ${id} ==> ${urlDatabase[id]}`);
   delete urlDatabase[id];
   return res.redirect('/urls');
+})
+
+// EDIT EXISTING URL
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const newURL = req.body.editURL
+  
+  if (urlDatabase.hasOwnProperty(id)) {
+    urlDatabase[id] = newURL;
+    console.log(`URL successfully changed`);
+
+  }
+  res.redirect('/urls')
 })
 
 app.get("/urls/new", (req, res) => {
@@ -82,6 +97,7 @@ app.get('/dripDrop', (req, res) => {
   res.render('dripDrop', templateVars);
 });
 
+// SHOW SHORT URLS //
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const templateVars = { 
