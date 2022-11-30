@@ -94,6 +94,19 @@ app.post("/urls/:id/delete", (req, res) => {
   return res.redirect("/urls");
 });
 
+// EDIT EXISTING URL
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const newURL = req.body.editURL
+  
+  if (urlDatabase.hasOwnProperty(id)) {
+    urlDatabase[id] = newURL;
+    console.log(`URL successfully changed`);
+
+  }
+  res.redirect('/urls')
+})
+
 app.get("/urls/new", (req, res) => {
   const templateVars = {
     username: req.cookies["username"],
