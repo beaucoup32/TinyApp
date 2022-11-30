@@ -17,21 +17,21 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <div class="login" padding-left="20px">
-          <% if (!username) { %>
+          <% if (!users.userRandomID) { %>
             <form  name='login' method='POST' action="/login">
               <p>
-                Username: 
+                email: 
                 <input type="text"
-                name="username"
-                id="username"
+                name="email"
+                id="email"
                 value=""
-                placeholder="Username" />
+                placeholder="email" />
                 <button type="login">login</button>
               </p>
             </form>
             <% } else { %>
               <form name="logout" action="/logout" method="POST">
-              <p><%= username %>
+              <p><%= users.userRandomID.email %>
                 <button type="logout">logout</button>
               </p>
             </form>
