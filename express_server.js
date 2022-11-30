@@ -42,9 +42,10 @@ app.get("/urls", (req, res) => {
     username: req.cookies['username'],
   };
 
-  console.log('res cookies: ',res.cookies);
-  console.log('req cookies: ', req.cookies);
-  res.render("urls_index", templateVars);
+  
+  // console.log('req cookies: ', req.cookies);
+
+  return res.render("urls_index", templateVars);
 });
 
 //  CREATE NEW SHORT URL //
@@ -66,7 +67,7 @@ app.post("/urls/:id", (req, res) => {
     urlDatabase[id] = newURL;
     console.log(`URL successfully changed`);
   }
-  res.redirect("/urls");
+  return res.redirect("/urls");
 });
 
 // LOG IN //
@@ -104,24 +105,24 @@ app.post('/urls/:id', (req, res) => {
     console.log(`URL successfully changed`);
 
   }
-  res.redirect('/urls')
+  return res.redirect('/urls')
 })
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {
     username: req.cookies["username"],
   }
-  res.render("urls_new", templateVars);
+  return res.render("urls_new", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  res.redirect(longURL);
+  return res.redirect(longURL);
 });
 
 app.get("/about", (req, res) => {
-  res.render("pages/about");
+  return res.render("pages/about");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -146,11 +147,11 @@ app.get("/urls/:id", (req, res) => {
     longURL: urlDatabase[id],
   };
 
-  res.render("urls_show", templateVars);
+  return res.render("urls_show", templateVars);
 });
 
 app.get("*", (req, res) => {
-  res.render("404");
+  return res.render("404");
 });
 
 app.listen(PORT, () => {
