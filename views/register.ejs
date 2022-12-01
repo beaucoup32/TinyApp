@@ -14,16 +14,31 @@
 </head>
 <body>
   <%- include('partials/_header') %>
-  <h1>REGISTER</h1>
-  <form method="POST" action="/register">
-    email: 
-    <input name="email" type="email">
-  </br>
-    password:
-    <input type="password" name="password">
-  </br>
-  <button type="submit">Login</button>
+  <main style="margin: 1em;">
+
+  <h3>CREATE ACCOUNT</h3>
+  <form class='form-inline' method="POST" action="/register">
+    <label for="email">Enter email: </label> 
+      <input 
+        class='form-control' 
+        name="email" 
+        type="email" 
+        placeholder="Enter email"
+        />
+      
+      <label for="password">Enter password: </label> 
+        
+      <input
+        class="form-control" 
+        type="password" 
+        name="password" 
+        placeholder="Enter password"
+        />
+      
+ 
+  <button type="submit" class="btn btn-primary" >Login</button>
   </form>
+</main>
 
       <!-- Bootstrap JS -->
   <script

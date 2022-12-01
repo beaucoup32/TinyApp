@@ -14,8 +14,16 @@ app.use(morgan('dev'));
 
 // Databases //
 let urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+
+  b2xVn2: {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: 'userRandomID',
+  },
+
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: 'userRandomID',
+},
 };
 
 const users = {
@@ -24,10 +32,10 @@ const users = {
     email: "user@example.com",
     password: "1234",
   },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
+  test: {
+    id: "test",
+    email: "ego@check.com",
+    password: "x",
   },
 };
 
@@ -43,6 +51,17 @@ const getUserByEmail = (email) => {
     }
   }
   return null;
+};
+
+const urlsForUser = (user_id) => {
+  let validLinks = {};
+  for (let key in urlDatabase) {
+    if (user_id.id == urlDatabase[key].userID) {
+      validLinks[key] = urlDatabase[key];
+    }
+  }
+
+  return validLinks;
 };
 
 // console.log(generateRandUrl());
@@ -95,9 +114,19 @@ app.post("/register", (req, res) => {
 
 //  CREATE NEW SHORT URL //
 app.post("/urls", (req, res) => {
+  let user_id = req.cookies.user_id;
+  const longURL = req.body.longURL;
+
+  if (!user_id) {
+    return res.status(401).send('You need to be logged in to shorten URLs');
+  }
 
   let id = generateRandUrl();
-  urlDatabase[id] = req.body.longURL;
+
+  urlDatabase[id] = {longURL: longURL, userID: user_id.id };
+  // urlDatabase[id] = user_id.id;
+
+  console.log('data bases', urlDatabase);
 
   return res.redirect(`/urls/${id}`);
 });
@@ -106,11 +135,24 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newURL = req.body.editURL;
+  let user_id = req.cookies.user_id;
 
-  if (urlDatabase.hasOwnProperty(id)) {
-    urlDatabase[id] = newURL;
-    console.log(`URL successfully changed`);
+  if (!user_id) {
+    return res.status(402).send('Not logged in');
   }
+ 
+  if (!urlDatabase.hasOwnProperty(id)) {
+   
+    return res.status(400).send('this id does not exist');
+  }
+
+  if (!urlsForUser(user_id)) {
+
+    return res.status(401).send('You do not own this id')
+  }
+
+  urlDatabase[id] = newURL;
+  console.log(`URL successfully changed`);
   return res.redirect("/urls");
 });
 
@@ -125,8 +167,9 @@ app.post("/login", (req, res) => {
     return res.status(400).send('Missing Email or Password');
   }
   
-  let user = getUserByEmail(email);
   // check if email exists in database
+  let user = getUserByEmail(email);
+
   if (!user) {
     return res.status(403).send('Email does not exist')
   }
@@ -136,11 +179,7 @@ app.post("/login", (req, res) => {
     return res.status(403).send('Password does not match')
   }
 
-  
-  let user_id = user.id;
-
   res.cookie('user_id', user);
-  // console.log('user', user);
   return res.redirect("/urls");
 });
 
@@ -157,6 +196,22 @@ app.post("/logout", (req, res) => {
 // DELETE URLS //
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
+  let user_id = req.cookies.user_id;
+
+    if (!user_id) {
+    return res.status(402).send('Not logged in');
+  }
+ 
+  if (!urlDatabase.hasOwnProperty(id)) {
+   
+    return res.status(400).send('this id does not exist');
+  }
+
+  if (!urlsForUser(user_id)) {
+    
+    return res.status(401).send('You do not own this id')
+  }
+
   console.log(`Deleting shortURL: ${id} ==> ${urlDatabase[id]}`);
   delete urlDatabase[id];
   return res.redirect("/urls");
@@ -178,28 +233,29 @@ app.post("/urls/:id", (req, res) => {
 app.get("/urls", (req, res) => {
   let user_id = req.cookies.user_id;
 
-  console.log(user_id);
   if (!user_id) {
-    user_id = null;
+    return res.status(403).send('Please Log in or Register First.');
   }
 
   //render page w user email + info
   // const user = users[user_id]
 
+
+  const validLinks = urlsForUser(user_id)
   const templateVars = {
-    urls: urlDatabase,
+    urls: validLinks,
     user: user_id,
   };
 
+  // console.log(templateVars.urls);
   return res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
   let user_id = req.cookies.user_id;
 
-  console.log(user_id);
   if (!user_id) {
-    user_id = null;
+    return res.redirect('/login');
   }
 
   //render page w user email + info
@@ -214,6 +270,11 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/register", (req, res) => { 
   let user_id = req.cookies.user_id;
+
+  if (user_id) {
+    return res.redirect('/urls')
+  }
+
 
   if (!user_id) {
     user_id = null;
@@ -230,6 +291,10 @@ app.get("/register", (req, res) => {
 app.get("/login" ,(req, res) => {
   let user_id = req.cookies.user_id;
 
+  if (user_id) {
+    return res.redirect('/urls')
+  }
+
   if (!user_id) {
     user_id = null;
   }
@@ -244,6 +309,10 @@ app.get("/login" ,(req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
+
+  if (!urlDatabase[id]) {
+    return res.status(400).send('This short ID does not exist')
+  }
   const longURL = urlDatabase[id];
   return res.redirect(longURL);
 });
@@ -266,17 +335,24 @@ app.get("/urls.json", (req, res) => {
 // });
 
 // SHOW SHORT URLS //
+
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   let user_id = req.cookies.user_id;
 
   if (!user_id) {
-    user_id = null;
+    return res.status(400).send('Please log in.');
   }
+
+  if (!urlsForUser(user_id.id)) {
+    return res.status(403).send('You do not own this link');
+  }
+  console.log(urlsForUser(user_id.id));
+
   const templateVars = {
     user: user_id,
     id: id,
-    longURL: urlDatabase[id],
+    urls: urlDatabase[id],
   };
 
   return res.render("urls_show", templateVars);
