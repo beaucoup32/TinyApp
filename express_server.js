@@ -3,12 +3,19 @@ const morgan = require("morgan");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs')
+const {getUserByEmail} = require('./helpers')
 
 // set view engine to ejs
 app.set("view engine", "ejs");
 
 // MIDDLE WARE //
+app.use(cookieSession({
+  name: 'session',
+  keys: ['beaucoup'],
+
+}))
 app.use(cookieParser()); // read cookies
 app.use(express.urlencoded({ extended: true })); // sets encoding
 app.use(morgan('dev'));
@@ -31,27 +38,18 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "1234",
+    password: bcrypt.hashSync("1234", 10),
   },
   test: {
     id: "test",
     email: "ego@check.com",
-    password: "x",
+    password: bcrypt.hashSync("x", 10),
   },
 };
 
 const generateRandUrl = () => {
   const randUrl = Math.random().toString(36).slice(2, 8);
   return randUrl;
-};
-
-const getUserByEmail = (email) => {
-  for (let userKey in users) {
-    if (email == users[userKey].email) {
-      return users[userKey];
-    }
-  }
-  return null;
 };
 
 const urlsForUser = (user_id) => {
@@ -100,7 +98,7 @@ app.post("/register", (req, res) => {
   }
   
   //check to see if user email is in database
-  if (getUserByEmail(info.email)) {
+  if (getUserByEmail(info.email, users)) {
     return res.status(401).send("email already in use");
   }
   
@@ -110,7 +108,8 @@ app.post("/register", (req, res) => {
   
   
   //return cookie with form data
-  res.cookie('user_id', newUser);
+  // res.cookie('user_id', newUser);
+  req.session.beaucoup = newUser
 
   
   return res.redirect("/urls");
@@ -118,8 +117,8 @@ app.post("/register", (req, res) => {
 
 //  CREATE NEW SHORT URL //
 app.post("/urls", (req, res) => {
-  let user_id = req.cookies.user_id;
-  const longURL = httpPrefix(req.body.longURL);
+  let user_id = req.session.beaucoup;
+  const longURL = req.body.longURL;
 
   if (!user_id) {
     return res.status(401).send('You need to be logged in to shorten URLs');
@@ -139,7 +138,7 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newURL = req.body.editURL;
-  let user_id = req.cookies.user_id;
+  let user_id = req.session.beaucoup;
 
   if (!user_id) {
     return res.status(402).send('Not logged in');
@@ -172,7 +171,7 @@ app.post("/login", (req, res) => {
   }
   
   // check if email exists in database
-  let user = getUserByEmail(email);
+  let user = getUserByEmail(email, users);
 
   if (!user) {
     return res.status(403).send('Email does not exist')
@@ -183,17 +182,16 @@ app.post("/login", (req, res) => {
     return res.status(403).send('Password does not match')
   }
 
-  res.cookie('user_id', user);
+  // res.cookie('user_id', user);
+  req.session.beaucoup = user
   return res.redirect("/urls");
 });
 
 // LOG OUT//
 app.post("/logout", (req, res) => {
-  const user_id = req.cookies;
-  // console.log('id', id);
-  // console.log(user_id);
 
-  res.clearCookie('user_id');
+  // clear cookie
+  req.session = null;
   return res.redirect("/login");
 });
 
@@ -236,8 +234,9 @@ app.post("/urls/:id", (req, res) => {
 
 // GET //
 app.get("/urls", (req, res) => {
-  let user_id = req.cookies.user_id;
+  let user_id = req.session.beaucoup;
 
+  console.log(req.session.beaucoup);
   if (!user_id) {
     return res.status(403).send('Please Log in or Register First.');
   }
@@ -258,7 +257,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  let user_id = req.cookies.user_id;
+  let user_id = req.session.beaucoup;
 
   if (!user_id) {
     return res.redirect('/login');
@@ -275,8 +274,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/register", (req, res) => { 
-  let user_id = req.cookies.user_id;
-
+  let user_id = req.session.beaucoup;
 
 
   if (user_id) {
@@ -297,7 +295,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login" ,(req, res) => {
-  let user_id = req.cookies.user_id;
+  let user_id = req.session.beaucoup;
 
   if (user_id) {
     return res.redirect('/urls')
@@ -340,7 +338,7 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
-  let user_id = req.cookies.user_id;
+  let user_id = req.session.beaucoup;
 
   if (!user_id) {
     return res.status(400).send('Please log in.');

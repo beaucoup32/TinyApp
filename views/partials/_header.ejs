@@ -21,12 +21,14 @@
           <a class="nav-item nav-link" href="/register">Register</a>
           <a class="nav-item nav-link" href="/login">Login</a>
           <% } else { %>
-            
+            <div>
             <form method="POST" action="/logout">
-              <h4><%= user.email %></h4>
-              <button type="submit">Logout</button>
+              <h4><%= user.email %>
+                <button type="submit">Logout</button>
+              
+              </h4>
             </form>
-
+          </div>
           <% } %>
       </div>
     </div>
