@@ -16,27 +16,18 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <div class="login" padding-left="20px">
-          <% if (!users.userRandomID) { %>
-            <form  name='login' method='POST' action="/login">
-              <p>
-                email: 
-                <input type="text"
-                name="email"
-                id="email"
-                value=""
-                placeholder="email" />
-                <button type="login">login</button>
-              </p>
+        
+        <% if (!user)  { %>
+          <a class="nav-item nav-link" href="/register">Register</a>
+          <a class="nav-item nav-link" href="/login">Login</a>
+          <% } else { %>
+            
+            <form method="POST" action="/logout">
+              <h1><%= user.email %></h1>
+              <button type="submit">Logout</button>
             </form>
-            <% } else { %>
-              <form name="logout" action="/logout" method="POST">
-              <p><%= users.userRandomID.email %>
-                <button type="logout">logout</button>
-              </p>
-            </form>
-              <% } %>
-        </div>
+
+          <% } %>
       </div>
     </div>
   </nav>
