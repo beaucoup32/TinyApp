@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
-const { url } = require("inspector");
+const bcrypt = require('bcryptjs')
 
 // set view engine to ejs
 app.set("view engine", "ejs");
@@ -65,8 +65,6 @@ const urlsForUser = (user_id) => {
   return validLinks;
 };
 
-// console.log(generateRandUrl());
-
 //use res.render to load up ejs view file
 /*
 // ROOT PAGE //
@@ -89,34 +87,39 @@ app.post("/register", (req, res) => {
   // form info
   const info = req.body;
 
+  // hash password
+  const password = info.password
+  const hashedPass = bcrypt.hashSync(password, 10)
+  
   //create user obj from form
-  let newUser = { id: user_id, email: info.email, password: info.password };
+  let newUser = { id: user_id, email: info.email, password: hashedPass };
 
   // check if email and pass are empty
   if (!info.email || !info.password) {
     return res.status(400).send("Email or Password field is empty");
   }
-
+  
   //check to see if user email is in database
   if (getUserByEmail(info.email)) {
     return res.status(401).send("email already in use");
   }
-
+  
+  
   // add user to database
   users[newUser.id] = newUser;
-
-  console.log('users', users);
+  
+  
   //return cookie with form data
   res.cookie('user_id', newUser);
 
-  // console.log('users', users);
+  
   return res.redirect("/urls");
 });
 
 //  CREATE NEW SHORT URL //
 app.post("/urls", (req, res) => {
   let user_id = req.cookies.user_id;
-  const longURL = req.body.longURL;
+  const longURL = httpPrefix(req.body.longURL);
 
   if (!user_id) {
     return res.status(401).send('You need to be logged in to shorten URLs');
@@ -127,7 +130,7 @@ app.post("/urls", (req, res) => {
   urlDatabase[id] = {longURL: longURL, userID: user_id.id };
   // urlDatabase[id] = user_id.id;
 
-  console.log('data bases', urlDatabase);
+  // console.log('data bases', urlDatabase);
 
   return res.redirect(`/urls/${id}`);
 });
@@ -176,7 +179,7 @@ app.post("/login", (req, res) => {
   }
 
   // check if password is correct
-  if (password !== user.password) {
+  if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send('Password does not match')
   }
 
@@ -213,7 +216,7 @@ app.post("/urls/:id/delete", (req, res) => {
     return res.status(401).send('You do not own this id')
   }
 
-  console.log(`Deleting shortURL: ${id} ==> ${urlDatabase[id]}`);
+  
   delete urlDatabase[id];
   return res.redirect("/urls");
 });
@@ -222,11 +225,12 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newURL = req.body.editURL;
-
-  console.log('data base', urlDatabase[id]);
+  
+  // console.log('data base');
   if (urlDatabase.hasOwnProperty(id)) {
-    urlDatabase[id].longURL = newURL;
+    urlDatabase[id] = {longURL: newURL}
   }
+
   return res.redirect("/urls");
 });
 
@@ -241,6 +245,7 @@ app.get("/urls", (req, res) => {
   //render page w user email + info
   // const user = users[user_id]
 
+  
 
   const validLinks = urlsForUser(user_id)
   const templateVars = {
@@ -271,6 +276,8 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/register", (req, res) => { 
   let user_id = req.cookies.user_id;
+
+
 
   if (user_id) {
     return res.redirect('/urls')
@@ -317,6 +324,7 @@ app.get("/u/:id", (req, res) => {
   }
   const longURL = urlDatabase[id].longURL;
 
+  
   return res.redirect(longURL);
 });
 
@@ -327,15 +335,6 @@ app.get("/about", (req, res) => {
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
-// app.get("/dripDrop", (req, res) => {
-//   templateVars = {
-//     username: req.cookies['username'],
-//     main: "Drip Drop",
-//   };
-
-//   res.render("dripDrop", templateVars);
-// });
 
 // SHOW SHORT URLS //
 
@@ -356,7 +355,7 @@ app.get("/urls/:id", (req, res) => {
     id: id,
     urls: urlDatabase[id],
   };
-  console.log(templateVars);
+  // console.log(templateVars);
 
   return res.render("urls_show", templateVars);
 });
