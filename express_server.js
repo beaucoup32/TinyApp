@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
+const { url } = require("inspector");
 
 // set view engine to ejs
 app.set("view engine", "ejs");
@@ -151,7 +152,7 @@ app.post("/urls/:id", (req, res) => {
     return res.status(401).send('You do not own this id')
   }
 
-  urlDatabase[id] = newURL;
+  urlDatabase[id].longURL = newURL;
   console.log(`URL successfully changed`);
   return res.redirect("/urls");
 });
@@ -222,9 +223,9 @@ app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newURL = req.body.editURL;
 
+  console.log('data base', urlDatabase[id]);
   if (urlDatabase.hasOwnProperty(id)) {
-    urlDatabase[id] = newURL;
-    console.log(`URL successfully changed`);
+    urlDatabase[id].longURL = newURL;
   }
   return res.redirect("/urls");
 });
@@ -310,10 +311,12 @@ app.get("/login" ,(req, res) => {
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
 
-  if (!urlDatabase[id]) {
-    return res.status(400).send('This short ID does not exist')
+  if (!urlDatabase.hasOwnProperty(id)) {
+   
+    return res.status(400).send('this id does not exist');
   }
-  const longURL = urlDatabase[id];
+  const longURL = urlDatabase[id].longURL;
+
   return res.redirect(longURL);
 });
 
@@ -344,16 +347,16 @@ app.get("/urls/:id", (req, res) => {
     return res.status(400).send('Please log in.');
   }
 
-  if (!urlsForUser(user_id.id)) {
+  if (!urlsForUser(user_id)) {
     return res.status(403).send('You do not own this link');
   }
-  console.log(urlsForUser(user_id.id));
-
+  
   const templateVars = {
     user: user_id,
     id: id,
     urls: urlDatabase[id],
   };
+  console.log(templateVars);
 
   return res.render("urls_show", templateVars);
 });
